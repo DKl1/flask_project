@@ -1,2 +1,3 @@
 poetry.lock
-/pyproject.toml
+/pyproject.toml/
+/__pycache__/
