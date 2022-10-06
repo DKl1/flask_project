@@ -4,4 +4,4 @@
 
             git clone https://github.com/DKl1/flask_project.git
 3. open current project by your IDE
-4. download requirements
+4. Create poetry virtualenv with python 3.8
