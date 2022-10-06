@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "fl-project"
+name = "Hotel"
 version = "0.1.0"
 description = ""
 authors = ["DKl1 <klymbag@gmail.com>"]
 readme = "README.md"
-packages = [{include = "fl_project"}]
+packages = [{include = "../Hotel"}]
 
 [tool.poetry.dependencies]
 python = "^3.7"
