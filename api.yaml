@@ -1,0 +1,404 @@
+openapi: 3.0.0
+info:
+  title: Hotel
+  version: 0.0.1
+servers:
+  - url: http://localhost:8000/woster/api/
+    description: Hotel renting service
+paths:
+  /admin:
+    get:
+      tags:
+        - "Admin"
+      summary: "Logs admin into the system"
+      operationId: "loginAdmin"
+
+      parameters:
+        - name: "username"
+          in: "query"
+          description: "The user name for login"
+          required: true
+          schema:
+            type: "string"
+            example: Admin
+          
+        - name: "password"
+          in: "query"
+          description: "The password for login in clear text"
+          required: true
+          schema:
+            type: "string"
+            example: admin1234
+      responses:
+        "200":
+          description: Log in successfully
+          content: {}
+        "404":
+          description: "Invalid username/password supplied"
+        "default":
+          description: Send general error 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        
+  /rooms:
+    get:
+      summary: Get all rooms in the hotel
+      tags: 
+        - Rooms
+      operationId: getAllRooms
+      parameters: 
+        - in: query
+          name: class
+          schema:
+              type: string
+              enum:
+              - economy
+              - comfort
+              - comfort+
+              - luxe
+              example: "luxe"
+        - in: query
+          name: people
+          schema:
+            type: integer
+            example: 2
+        - in: query
+          name: free
+          schema:
+            $ref: "#/components/schemas/Reserved"
+        - in: query
+          name: beds
+          schema:
+            type: integer
+            example: 2
+        - in: query
+          name: max_price
+          schema:
+            type: integer
+            example: 750
+      responses:
+        "200":
+          description: Succes loading all rooms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rooms"
+        "404": 
+          description: Room doesn't exist. Check room_id please.
+        "default":
+          description: Send general error 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Post one room
+      tags: 
+        - Rooms
+      operationId: createRoom
+      requestBody:
+        required: true
+        content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+      responses:
+        '200':
+          description: Room created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "409": #Conflict code
+          description: Room already exist. Change room_id please.
+          
+        'default':
+          description: Send general error 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        
+      
+  /rooms/{room_id}:
+    get:
+      summary: Get room by it's number
+      tags: 
+        - Room
+      operationId: getRoom
+      parameters: 
+        - name: room_id
+          in: path
+          required: true
+          description: Room id
+          schema:
+            type: string
+          example: 221B
+            
+      responses:
+        "200":
+          description: Succes loading the rooms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        '404':
+          description: "Invalid room_id"
+        "default":
+          description: Send general error 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      summary: Update info about the room
+      tags: 
+        - Room
+      operationId: updateRoom
+      parameters: 
+        - name: room_id
+          in: path
+          required: true
+          description: Room id
+          schema:
+            type: string
+          example: 221B
+      requestBody:
+        required: true
+        content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+          
+      responses:
+        '200':
+          description: Room updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        '400':
+          description: "Invalid room_id"
+        'default':
+          description: Send general error 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete all info about the room
+      tags: 
+        - Room
+      operationId: deleteRoom
+      parameters: 
+        - name: room_id
+          in: path
+          required: true
+          description: Room id
+          schema:
+            type: string
+          example: 221B
+        
+      responses:
+        '200':
+          description: Room deleted successfully
+          content: {}
+        '400':
+          description: "Invalid room_id"
+        'default':
+          description: Send general error 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  
+  /rooms/reserve/{room_id}:   
+    post:
+        summary: Reserve room by it's number
+        tags: 
+          - Reserve
+        operationId: reserveRoom
+        parameters: 
+          - name: room_id
+            in: path
+            required: true
+            description: Room id
+            schema:
+              type: string
+            example: 221B 
+        requestBody:
+          required: true
+          content:
+            application/json:
+               schema:
+                 $ref: "#/components/schemas/Reservetion"
+        responses:
+          '200':
+            description: Room reserved successfully
+            content: {}
+          '400':
+            description: "Invalid room_id"
+          "409": #Conflict code
+            description: Room already reserved for that date. Change room_id or dates please.
+          'default':
+            description: Send general error 
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete reservation by phone number and room_id
+      tags: 
+        - Reserve
+      operationId: deleteReservation
+      parameters: 
+        - name: room_id
+          in: path
+          required: true
+          description: Room id
+          schema:
+            type: string
+          example: 221B
+        
+        - name: phone
+          in: query
+          required: true
+          description: phone number of client
+          schema:
+            type: string
+            pattern: '^(\()?\d{3}(\))?(-|\s)?\d{3}(-|\s)\d{4}$'
+            example: "098-81-38-177"
+        
+      responses:
+        '200':
+          description: Reservation cancelled successfully
+          content: {}
+        '400':
+          description: "Invalid room_id or phone number in reservation"
+        'default':
+          description: Send general error 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+
+components:
+  schemas:
+    Error:
+      type: object
+      required: 
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          example: 500
+        message:
+          type: string
+          example: Unhandled error
+    Room:
+      type: object
+      required: 
+        - room_number
+        - people
+        - type
+        - price
+        - reserved
+        - description
+      properties:
+        room_number:
+          type: string
+          example: 221B
+        people:
+          type: integer
+          example: 3
+        type:
+          type: string
+          enum:
+            - economy
+            - comfort
+            - comfort+
+            - luxe
+          example: comfort+
+          description: room comfort class
+        price:
+          type: integer
+          example: 800
+        reserved:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reserved"
+        description:
+          type: string
+          example: "Помешкання \"Оренда квартири\" з видом на місто розташоване в центрі Львова, лише за 200 метрів від пам'ятника Володимирові Івасюку та за 400 метрів від проспекту Шевченка. Відстань до палацу Семенських-Левицьких становить 600 метрів, а до палацу Потоцьких — 1,3 км."
+        # Not required
+        photo:
+          type: string
+          example: "https://i.pinimg.com/564x/aa/72/1a/aa721a4b4b42a819d3cbe661f0c7f33c.jpg"
+        beds:
+          type: integer
+          example: 2
+        
+
+            
+    Rooms:
+      type: array
+      items:
+        $ref: "#/components/schemas/Room"
+    Reservetion:
+      type: object
+      required:
+        - full_name
+        - phone
+        - dates
+      properties:
+        full_name:
+          type: string
+          example: Kril Oleh
+        phone:
+          type: string
+          pattern: '^(\()?\d{3}(\))?(-|\s)?\d{3}(-|\s)\d{4}$'
+        dates:
+          $ref: "#/components/schemas/Reserved"
+          
+        
+    Reserved:
+      type: object
+      required: 
+        - from
+        - to
+      properties:
+        from:
+          type: string
+          pattern: '^\d\d\d\d-(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01]) (00|[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]):([0-9]|[0-5][0-9])$'
+          example: "2013-02-05 11:23:22"
+        to:
+          type: string
+          pattern: '^\d\d\d\d-(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01]) (00|[0-9]|1[0-9]|2[0-3]):([0-9]|[0-5][0-9]):([0-9]|[0-5][0-9])$'
+          example: "2013-02-20 11:23:22"
+          
+    Admin:
+      type: object
+      required:
+        - full_name
+        - username
+        - password
+      properties:
+        full_name:
+          type: string
+          example: Klym Danilo
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          example: admin1234
+          
+          
+          
+        
+      
+              
