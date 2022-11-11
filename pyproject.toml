@@ -11,6 +11,14 @@ python = "^3.7"
 Flask = "^2.2.2"
 waitress = "^2.1.2"
 sqlalchemy = "^1.4.43"
+alembic = "^1.8.1"
+PyMySQL = "^1.0.2"
+flask-marshmallow = "^0.14.0"
+marshmallow = "^3.18.0"
+validators = "^0.20.0"
+marshmallow-sqlalchemy = "^0.28.1"
+SQLAlchemy-serializer = "^1.4.1"
+Flask-Bcrypt = "^1.0.1"
 
 
 [build-system]
