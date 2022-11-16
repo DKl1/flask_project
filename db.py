@@ -146,4 +146,5 @@ class AdminSchema(SQLAlchemyAutoSchema):
 
 
 if __name__ == "__main__":
-    base.metadata.drop_all(bind=engine)
+    pass
+    # base.metadata.create_all(bind=engine)

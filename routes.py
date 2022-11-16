@@ -1,28 +1,37 @@
-
-from flask import request, Flask
 from flask_bcrypt import generate_password_hash, check_password_hash
+from sqlalchemy.orm import session
+
 from db import *
+
+from datetime import datetime, timedelta
+from functools import wraps
+from flask import Flask, request, Response, session, jsonify, make_response
+
 import json
-from main import app
-from flask_httpauth import HTTPBasicAuth
-auth = HTTPBasicAuth()
+from waitress import serve
+import jwt
 
+app = Flask(__name__)
+app.config['SECRET_KEY'] = "ca9498317b9cd8654b62666a368e0500a8f6a1161093f19bb2edfc5642e474b8"
+def token_required(func):
+    # decorator factory which invoks update_wrapper() method and passes decorated function as an argument
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('token')
+        if not token:
+            return jsonify({'Alert!': 'Token is missing!'}), 401
 
-@auth.verify_password
-def verify_password(username, password):
-    session = Session()
-    admins = session.query(Admin)
-    users = [i.username for i in admins]
-    if username in users:
-        passs = session.query(Admin).filter(Admin.username == username).first()
-        session.close()
-        return check_password_hash(passs.password, password)
-    return False
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'])
+        # You can use the JWT errors in exception
+        except jwt.InvalidTokenError:
+            return 'Invalid token. Please log in again.'
+        except:
+            return jsonify({'Message': 'Invalid token'}), 403
 
-# @app.route('/hello')
-# @auth.login_required
-# def hello_world():
-#     return "Hi"
+        return func(*args, **kwargs)
+
+    return decorated
 
 @app.route('/rooms/', methods=['GET'])
 def get_room_by_number():
@@ -37,7 +46,7 @@ def get_room_by_number():
 
 
 @app.route('/rooms/', methods=['PUT'])
-@auth.login_required
+@token_required
 def update_room():
     session = Session()
     args = request.get_json()
@@ -56,25 +65,8 @@ def update_room():
         session.close()
         return str(error), 400
 
-
-#
-#
-# @app.route('/rooms/', methods=['DELETE'])
-# def delete_room():
-#     session = Session()
-#     args = request.args
-#     room_number = int(args.get('room_number'))
-#     # if session.query(Room).filter(Room.room_number == room_number).count() == 0:
-#     #     session.close()
-#     #     return "Such room doesn't exist", 404
-#     room = session.query(Room).filter(Room.room_number == room_number)
-#     session.query(Room).filter(Room.room_number == room_number).delete()
-#     session.query(Reservation).filter(Reservation.id_room == room_number).delete()
-#     session.commit()
-#     session.close()
-#     return room, 200
 @app.route('/rooms/<int:room_number>', methods=['DELETE'])
-@auth.login_required
+@token_required
 def delete_room(room_number):
     # args = request.args
     # tour_id = args.get('tour_id')
@@ -103,7 +95,7 @@ def get_rooms():
 #
 #
 @app.route('/rooms', methods=['POST'])
-@auth.login_required
+@token_required
 def post_room():
     session = Session()
     args = request.get_json()
@@ -147,39 +139,43 @@ def get_reserve():
     return res, 200
 
 
+# @app.route('/admin', methods=['POST'])
+# @token_required
+# def post_admin():
+#     session = Session()
+#     args = request.get_json()
+#     try:
+#         admin_schema = AdminSchema()
+#         admin = admin_schema.load(args, session=session)
+#         if session.query(Admin).filter(Admin.username == admin.username).count() != 0:
+#             return {"message": "Username already exists"}, 422
+#         admin.password = generate_password_hash(admin.password)
+#         session.add(admin)
+#         session.commit()
+#         res = admin_schema.dump(admin)
+#         session.close()
+#         return res, 200
+#     except ValidationError as error:
+#         session.close()
+#         return str(error), 400
+
+
 @app.route('/admin', methods=['POST'])
-@auth.login_required
-def post_admin():
-    session = Session()
-    args = request.get_json()
-    try:
-        admin_schema = AdminSchema()
-        admin = admin_schema.load(args, session=session)
-        if session.query(Admin).filter(Admin.username == admin.username).count() != 0:
-            return {"message": "Username already exists"}, 422
-        admin.password = generate_password_hash(admin.password)
-        session.add(admin)
-        session.commit()
-        res = admin_schema.dump(admin)
-        session.close()
-        return res, 200
-    except ValidationError as error:
-        session.close()
-        return str(error), 400
+def loginAdmin():
+    admin_json = request.get_json()
+    if Admin.auth(admin_json['username'], admin_json['password']):
+        session['logged_in'] = True
 
+        token = jwt.encode({
+            'user': admin_json['username'],
+            'expiration': str(datetime.utcnow() + timedelta(seconds=60))
+        },app.config['SECRET_KEY'])
+        return jsonify({'token': token.decode('utf-8')})
+    else:
+        return make_response('Unable to verify', 403, {'WWW-Authenticate': 'Basic realm: "Authentication Failed "'})
 
-@app.route('/admin', methods=['GET'])
-@auth.login_required
-def get_admin():
-    session = Session()
-    args = request.args
-    admin_id = args.get('admin_id')
-    admin = session.query(Admin).filter(Admin.admin_id == admin_id).first()
-    admin_schema = AdminSchema()
-    res = admin_schema.dump(admin)
-    session.close()
-    return res, 200
+if __name__ == '__main__':
+    app.run(debug=True, port=3001)
+    print("Server")
+    serve(app)
 
-# # @app.route('/rooms/reserve/', methods=['DELETE'])
-# def delete_reserve():
-#     pass
