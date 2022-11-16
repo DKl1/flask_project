@@ -6,7 +6,7 @@ from marshmallow_sqlalchemy import *
 from marshmallow import fields, validate, ValidationError
 
 
-engine = create_engine("mysql+pymysql://root:Klym305@localhost:3306/hotel_db", echo=True)
+engine = create_engine("mysql+pymysql://root:rootadmin2022@localhost:3306/hotel", echo=True)
 SessionFactory = sessionmaker(bind=engine)
 Session = scoped_session(SessionFactory)
 base = declarative_base()
@@ -50,6 +50,16 @@ class Admin(base):
         self.full_name = full_name
         self.username = username
         self.password = password
+
+    @classmethod
+    def auth(cls, username, password):
+        with Session() as session:
+            admin = session.query(Admin).filter(and_(Admin.username == username, Admin.password == password)).first()
+            if admin:
+                return True
+            else:
+                return False
+
 
 
 class Room(base):
