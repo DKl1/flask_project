@@ -1,10 +1,28 @@
-from flask import current_app as application
+
 from flask import request, Flask
 from flask_bcrypt import generate_password_hash, check_password_hash
 from db import *
 import json
 from main import app
+from flask_httpauth import HTTPBasicAuth
+auth = HTTPBasicAuth()
 
+
+@auth.verify_password
+def verify_password(username, password):
+    session = Session()
+    admins = session.query(Admin)
+    users = [i.username for i in admins]
+    if username in users:
+        passs = session.query(Admin).filter(Admin.username == username).first()
+        session.close()
+        return check_password_hash(passs.password, password)
+    return False
+
+# @app.route('/hello')
+# @auth.login_required
+# def hello_world():
+#     return "Hi"
 
 @app.route('/rooms/', methods=['GET'])
 def get_room_by_number():
@@ -19,6 +37,7 @@ def get_room_by_number():
 
 
 @app.route('/rooms/', methods=['PUT'])
+@auth.login_required
 def update_room():
     session = Session()
     args = request.get_json()
@@ -26,7 +45,7 @@ def update_room():
     room_number = arg.get('room_number')
     room_schema = RoomSchema()
     try:
-        room = room_schema.load(args, session=session)
+        room = room_schema.load(args, session=session, partial=True)
         session.query(Room).filter(Room.room_number == room_number).update(args)
         session.commit()
         room = room_schema.dump(session.query(Room).filter(Room.room_number == room_number).first())
@@ -55,7 +74,8 @@ def update_room():
 #     session.close()
 #     return room, 200
 @app.route('/rooms/<int:room_number>', methods=['DELETE'])
-def delete_user(room_number):
+@auth.login_required
+def delete_room(room_number):
     # args = request.args
     # tour_id = args.get('tour_id')
     if validate_entry_id(Room, room_number):
@@ -83,6 +103,7 @@ def get_rooms():
 #
 #
 @app.route('/rooms', methods=['POST'])
+@auth.login_required
 def post_room():
     session = Session()
     args = request.get_json()
@@ -127,6 +148,7 @@ def get_reserve():
 
 
 @app.route('/admin', methods=['POST'])
+@auth.login_required
 def post_admin():
     session = Session()
     args = request.get_json()
@@ -147,6 +169,7 @@ def post_admin():
 
 
 @app.route('/admin', methods=['GET'])
+@auth.login_required
 def get_admin():
     session = Session()
     args = request.args

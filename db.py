@@ -1,13 +1,10 @@
 from sqlalchemy import *
 from enum import Enum as enum
-from uuid import UUID
-from flask_marshmallow.sqla import SQLAlchemyAutoSchema
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base, scoped_session
-from sqlalchemy.sql.functions import now
-from sqlalchemy_serializer import SerializerMixin
+
 from marshmallow_sqlalchemy import *
 from marshmallow import fields, validate, ValidationError
-from validators import *
+
 
 engine = create_engine("mysql+pymysql://root:Klym305@localhost:3306/hotel_db", echo=True)
 SessionFactory = sessionmaker(bind=engine)
