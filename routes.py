@@ -1,10 +1,10 @@
-
 from flask import request, Flask
 from flask_bcrypt import generate_password_hash, check_password_hash
 from db import *
 import json
 from main import app
 from flask_httpauth import HTTPBasicAuth
+
 auth = HTTPBasicAuth()
 
 
@@ -18,11 +18,6 @@ def verify_password(username, password):
         session.close()
         return check_password_hash(passs.password, password)
     return False
-
-# @app.route('/hello')
-# @auth.login_required
-# def hello_world():
-#     return "Hi"
 
 @app.route('/rooms/', methods=['GET'])
 def get_room_by_number():
@@ -57,22 +52,6 @@ def update_room():
         return str(error), 400
 
 
-#
-#
-# @app.route('/rooms/', methods=['DELETE'])
-# def delete_room():
-#     session = Session()
-#     args = request.args
-#     room_number = int(args.get('room_number'))
-#     # if session.query(Room).filter(Room.room_number == room_number).count() == 0:
-#     #     session.close()
-#     #     return "Such room doesn't exist", 404
-#     room = session.query(Room).filter(Room.room_number == room_number)
-#     session.query(Room).filter(Room.room_number == room_number).delete()
-#     session.query(Reservation).filter(Reservation.id_room == room_number).delete()
-#     session.commit()
-#     session.close()
-#     return room, 200
 @app.route('/rooms/<int:room_number>', methods=['DELETE'])
 @auth.login_required
 def delete_room(room_number):
@@ -83,7 +62,6 @@ def delete_room(room_number):
         session = Session()
         session.query(Reservation).filter(Reservation.id_room == room_number).delete()
         session.query(Room).filter(Room.room_number == room_number).delete()
-
         session.commit()
         session.close()
         return {"message": "Room deleted successfully"}, 200
@@ -179,7 +157,3 @@ def get_admin():
     res = admin_schema.dump(admin)
     session.close()
     return res, 200
-
-# # @app.route('/rooms/reserve/', methods=['DELETE'])
-# def delete_reserve():
-#     pass
