@@ -1,6 +1,6 @@
 from sqlalchemy import *
 from enum import Enum as enum
-from sqlalchemy.orm import sessionmaker, relationship, declarative_base, scoped_session
+from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
 from marshmallow_sqlalchemy import *
 from marshmallow import fields, validate, ValidationError
@@ -135,5 +135,5 @@ class AdminSchema(SQLAlchemyAutoSchema):
     password = fields.String(validate=validate.Length(min=10, max=30))
 
 
-if __name__ == "__main__":
-    base.metadata.drop_all(bind=engine)
+# if __name__ == "__main__":
+#     base.metadata.drop_all(bind=engine)
